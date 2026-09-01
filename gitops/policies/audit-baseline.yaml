@@ -1,0 +1,76 @@
+# Audit, not Enforce, and deliberately so.
+#
+# These two would block the platform's own charts on a fresh cluster. Running them in
+# Audit means the violations are visible in `kubectl get polr -A` from day one, and
+# each one gets promoted to Enforce when the workloads it covers are actually clean.
+# The upgrade path is the point; an Enforce policy with fifteen exclusions is not a
+# policy, it is a list.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: audit-require-nonroot
+  annotations:
+    policies.kyverno.io/title: Containers should not run as root
+    policies.kyverno.io/category: Pod Security
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: run-as-non-root
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - gatekeeper-system
+      validate:
+        message: "Containers should set securityContext.runAsNonRoot: true."
+        pattern:
+          spec:
+            =(securityContext):
+              =(runAsNonRoot): "true"
+            containers:
+              - =(securityContext):
+                  =(runAsNonRoot): "true"
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: audit-require-resources
+  annotations:
+    policies.kyverno.io/title: Containers should declare requests and limits
+    policies.kyverno.io/category: Reliability
+    policies.kyverno.io/description: >-
+      An unbounded pod on a one-node cluster evicts everything else, and on a GPU node
+      it is the difference between one model serving and none.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: requests-and-limits
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+      validate:
+        message: "Set resources.requests and resources.limits on every container."
+        pattern:
+          spec:
+            containers:
+              - resources:
+                  requests:
+                    memory: "?*"
+                    cpu: "?*"
+                  limits:
+                    memory: "?*"

@@ -1,0 +1,16 @@
+# Copy to terraform.tfvars and fill in. terraform.tfvars is NOT gitignored - it holds
+# no secrets, only names - so keep it that way: nothing here is sensitive.
+
+subscription_id = "00000000-0000-0000-0000-000000000000"
+location        = "uaenorth"
+
+# Your own public IP, as a /32.  curl -s https://ifconfig.me
+# An empty list opens the API server to the internet. Do not.
+api_authorized_ip_ranges = ["203.0.113.7/32"]
+
+# All three are globally unique across Azure. Pick something with your own suffix.
+acr_name             = "plinthdevacr01"
+storage_account_name = "plinthdevdata01"
+key_vault_name       = "plinth-dev-kv-01"
+
+github_repo = "hydramod/plinth-mlops"

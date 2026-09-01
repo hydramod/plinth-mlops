@@ -1,0 +1,28 @@
+# The Phase 0 hello-world. A public sklearn iris model, served by KServe, with no
+# training pipeline behind it - its only job is to prove that a commit to this repo
+# reaches a live endpoint without anybody touching the cluster.
+#
+# Phase 1 replaces it with a model that comes out of MLflow.
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: hello-sklearn
+  namespace: models
+  annotations:
+    # RawDeployment: plain Deployment + Service, no Knative. See docs/adr/0001.
+    serving.kserve.io/deploymentMode: RawDeployment
+spec:
+  predictor:
+    minReplicas: 1
+    maxReplicas: 1
+    model:
+      modelFormat:
+        name: sklearn
+      storageUri: gs://kfserving-examples/models/sklearn/1.0/model
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: "1"
+          memory: 1Gi

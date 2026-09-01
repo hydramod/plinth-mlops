@@ -1,0 +1,27 @@
+# The only manifest applied by hand. Everything else in this cluster is Argo CD
+# pulling gitops/ from the repo - which is what makes `make down && make up` a
+# meaningful test rather than a second imperative install path.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: plinth-root
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/hydramod/plinth-mlops.git
+    targetRevision: main
+    path: gitops/platform
+    directory:
+      recurse: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

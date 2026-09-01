@@ -1,0 +1,41 @@
+# terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+# bootstrap keeps local state on purpose - it must never be committed
+infra/bootstrap/terraform.tfstate*
+
+# secrets and local config
+.env
+*.pem
+*.key
+kubeconfig
+kubeconfig-*
+*.auto.tfvars
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Local shortcuts, not part of the project. The runbook carries every command in full,
+# so nothing here is required to stand the platform up.
+/Makefile
+
+# editors and os
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
