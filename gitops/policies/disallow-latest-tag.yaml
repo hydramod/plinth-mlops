@@ -1,0 +1,51 @@
+# Enforce narrowly, audit broadly.
+#
+# This one is Enforce and it is scoped to the namespaces that hold our own workloads.
+# A cluster-wide Enforce on day one blocks the platform charts themselves and you
+# spend the afternoon adding exclusions instead of shipping.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-latest-tag
+  annotations:
+    policies.kyverno.io/title: Disallow the latest tag
+    policies.kyverno.io/category: Supply chain
+    policies.kyverno.io/description: >-
+      A rollback needs something to roll back to. ":latest" and an omitted tag both
+      mean "whatever the registry had when the node last pulled", which is not a
+      version and cannot be reverted to.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-an-explicit-tag
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - models
+                - mlops
+      validate:
+        message: "An image tag is required. Untagged means :latest, and :latest cannot be rolled back."
+        pattern:
+          spec:
+            containers:
+              - image: "*:*"
+
+    - name: reject-latest
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - models
+                - mlops
+      validate:
+        message: "Using a mutable :latest tag is not allowed."
+        pattern:
+          spec:
+            containers:
+              - image: "!*:latest"

@@ -1,0 +1,51 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: fmt
+        run: terraform fmt -check -recursive infra/
+
+      - name: validate
+        run: |
+          for d in infra/bootstrap infra/modules/platform infra/envs/dev; do
+            echo "== $d"
+            terraform -chdir="$d" init -backend=false -input=false
+            terraform -chdir="$d" validate
+          done
+
+  manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: every manifest parses
+        run: |
+          pip install --quiet pyyaml
+          python - <<'PY'
+          import pathlib, sys, yaml
+          bad = []
+          for p in sorted(pathlib.Path("gitops").rglob("*.yaml")):
+              try:
+                  list(yaml.safe_load_all(p.read_text(encoding="utf-8")))
+              except yaml.YAMLError as e:
+                  bad.append(f"{p}: {e}")
+          print("\n".join(f"ok  {p}" for p in sorted(pathlib.Path('gitops').rglob('*.yaml'))))
+          if bad:
+              print("\n".join(bad), file=sys.stderr)
+              sys.exit(1)
+          PY
